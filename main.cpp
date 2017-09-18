@@ -1,5 +1,6 @@
-#include <iostream>
+#include "Species.h"
 
-main(int argc, char *argv[] ) {
-
+int main(int argc, char *argv[]) {
+	Species test;
+	test.print();
 }
