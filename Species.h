@@ -6,12 +6,18 @@
 
 using namespace std;
 
+int const WIDTH = 480;							//Window width
+int const HEIGHT = 360;							//Window height
+
 class Species
 {
 public:
-	Species();
-	Species(Species &mother, Species &father);
+	Species(double numberInputNodes, double numberOutputNodes, double crossing = 0.8, double mutationConn = 0.05, double mutationNode = 0.05);
+	Species(Species &mother, Species &father, double crossing = 0.8, double mutationConn = 0.05, double mutationNode = 0.05);
 	~Species();
+
+	//Setting mutation rate for this species (It can be possible to have different mutation rates for different species)
+	void setMutationAndCrossing(double crossing, double mutationConn, double mutationNode);
 
 	//Mutation for a connection
 	void mutateConnection();
@@ -42,9 +48,12 @@ private:
 
 	//Struct for the genome of a node
 	struct m_NodeGen {
-		int sense;				//Which layer this node is
+		int sense;				//Which layer this node is (0 = input, -1 = output, 1 = hidden)
 		int number;				//Historical marking number
 		int type;				//What type of threshold function this is
+		double positionX;		//X Position for the print function
+		double positionY;		//Y Position for the print function
+
 	};
 
 	//Struct for the genome of a connection
@@ -59,4 +68,7 @@ private:
 	//The Node and Connection Genomes are saved in a vector
 	vector<m_NodeGen> m_NodeGenomes;
 	vector<m_ConnectionGen> m_ConnectionGenomes;
+
+	//Data of the species
+	int m_speciesNumber;
 };
