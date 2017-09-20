@@ -1,118 +1,56 @@
 #include "Species.h"
 
 //Default constructor is for the first generation of networks
-Species::Species(double numberInputNodes, double numberOutputNodes, double crossing, double mutationConn, double mutationNode)
+Species::Species(const int &numberInputNodes, const int &numberOutputNodes, const int &numberConnections, const double &HEIGHT, const double &WIDTH, const double &crossing, const double &mutationConnAdd, const double &mutationNode, const double &mutateType, const double &mutateConn)
 {
-	//Create the nodes for the dummy network
-	/*
-	for (int i = 2; i < ((random_int() % 9) + 4); i++) {
-		m_NodeGen tmp;
-		tmp.sense = 0;
-		if (random_real() <= 0.5) {
-			tmp.type = 0;
-		}
-		else {
-			tmp.type = 1;
-		}
-		tmp.number = m_NodeGenomes.size();
-		m_NodeGenomes.push_back(tmp);
-	}
-	for (int i = 1; i < ((random_int() % 9) + 3); i++) {
-		m_NodeGen tmp;
-		tmp.sense = -1;
-		if (random_real() <= 0.5) {
-			tmp.type = 0;
-		}
-		else {
-			tmp.type = 1;
-		}
-		tmp.number = m_NodeGenomes.size();
-		m_NodeGenomes.push_back(tmp);
-	}
-	for (int i = 2; i < ((random_int() % 9) + 4); i++) {
-		m_NodeGen tmp;
-		tmp.sense = 2;
-		if (random_real() <= 0.5) {
-			tmp.type = 0;
-		}
-		else {
-			tmp.type = 1;
-		}
-		tmp.number = m_NodeGenomes.size();
-		m_NodeGenomes.push_back(tmp);
-	}
-
-	//Create the connections for the dummy network
-	for (int i = 0; i < m_NodeGenomes.size(); i++) {
-		m_ConnectionGen tmp;
-		int randomNode = random_int() % m_NodeGenomes.size();
-		int randomNode2 = random_int() % m_NodeGenomes.size();
-		while (m_NodeGenomes[randomNode2].sense == m_NodeGenomes[randomNode].sense) {
-			randomNode2 = random_int() % m_NodeGenomes.size();
-		}
-		tmp.ConnFromNodeNumber = randomNode;
-		tmp.ConnToNodeNumber = randomNode2;
-		tmp.weight = random_real_signed();
-		tmp.enabled = true;
-		m_ConnectionGenomes.push_back(tmp);
-	}
-	*/
-
 	/*Creating the basic construct*/
+	//Set the rates for this species
+	setMutationAndCrossing(crossing, mutationConnAdd, mutationNode, mutateType, mutateConn);
 	//Creating the input nodes
 	float nodeRadius = 7.0f;
+	m_inputNodes = numberInputNodes;
+	m_outputNodes = numberOutputNodes;
 	for (int i = 0; i < numberInputNodes; i++) {
-		m_NodeGen tmp;
+		m_NodeGene tmp;
 		tmp.sense = 0;
-		tmp.number = m_NodeGenomes.size();
-		tmp.positionX = 10.0f;
+		tmp.number = m_NodeGenes.size();
+		tmp.positionX = 25.0f;
 		tmp.positionY = (HEIGHT / numberInputNodes) * i + 2 * nodeRadius;
-		if (random_real() <= 0.5) {
+		if (randomReal(0.0, 1.0) <= 0.5) {
 			tmp.type = 0;
 		}
 		else {
 			tmp.type = 1;
 		}
-		m_NodeGenomes.push_back(tmp);
+		m_NodeGenes.push_back(tmp);
 	}
 
 	//Creating the output nodes
 	for (int i = 0; i < numberOutputNodes; i++) {
-		m_NodeGen tmp;
+		m_NodeGene tmp;
 		tmp.sense = -1;
-		tmp.number = m_NodeGenomes.size();
-		tmp.positionX = WIDTH - 10.0f - 2 * nodeRadius;
+		tmp.number = m_NodeGenes.size();
+		tmp.positionX = WIDTH - 25.0f - 2 * nodeRadius;
 		tmp.positionY = (HEIGHT / numberOutputNodes) * i + 2 * nodeRadius;
-		if (random_real() <= 0.5) {
+		if (randomReal(0.0, 1.0) <= 0.5) {
 			tmp.type = 0;
 		}
 		else {
 			tmp.type = 1;
 		}
-		m_NodeGenomes.push_back(tmp);
+		m_NodeGenes.push_back(tmp);
 	}
 
-	//Create the connections for the dummy network
-	for (int i = 0; i < 1; i++) {
-		m_ConnectionGen tmp;
-		int randomNode = random_int() % m_NodeGenomes.size();
-		int randomNode2 = random_int() % m_NodeGenomes.size();
-		while (m_NodeGenomes[randomNode2].sense == m_NodeGenomes[randomNode].sense) {
-			randomNode2 = random_int() % m_NodeGenomes.size();
-		}
-		tmp.ConnFromNodeNumber = randomNode;
-		tmp.ConnToNodeNumber = randomNode2;
-		tmp.weight = random_real_signed();
-		tmp.enabled = true;
-		m_ConnectionGenomes.push_back(tmp);
+	//Create the initial connections
+	for (int i = 0; i < numberConnections; i++) {
+		mutateAddConnection();
 	}
-	//Set the rates for this species
-	setMutationAndCrossing(crossing, mutationConn, mutationNode);
 }
 
-Species::Species(Species &mother, Species &father, double crossing, double mutationConn, double mutationNode)
+//This will create children via breeding of the fittest
+Species::Species(const Species &mother, const Species &father, const double &crossing, const double &mutationConnAdd, const double &mutationNode, const double &mutateType, const double &mutateConn)
 {
-	setMutationAndCrossing(crossing, mutationConn, mutationNode);
+	setMutationAndCrossing(crossing, mutationConnAdd, mutationNode, mutateType, mutateConn);
 }
 
 
@@ -121,26 +59,97 @@ Species::~Species()
 }
 
 //Setting mutation rate for this species (It can be possible to have different mutation rates for different species)
-void Species::setMutationAndCrossing(double crossing = 0.8, double mutationConn = 0.05, double mutationNode = 0.05) {
+void Species::setMutationAndCrossing(const double &crossing, const double &mutationConnAdd, const double &mutationNode, const double &mutateType, const double &mutationConn) {
 	m_crossingChance = crossing;
 	m_mutationRateConnection = mutationConn;
 	m_mutationRateNode = mutationNode;
+	m_mutationRateType = mutateType;
+	m_mutationRateConnectionAdd = mutationConnAdd;
 }
 
-//Random engine initialisation
-random_device Species::seed_generator;
-unsigned Species::seed = seed_generator();
-uniform_real_distribution<double> Species::distribution_real(0.0, 1.0);
-uniform_real_distribution<double> Species::distribution_real_signed(-1.0, 1.0);
-uniform_int_distribution<int> Species::distribution_int(0, INT_MAX);
-mt19937 Species::mersenne_generator(Species::seed);
+//Updating inputs and outputs
+vector<double> Species::process(const vector<double> &inputs) {
+	updateInOutputs();	//Updating all outputs in nodes through their saved inputs
+
+	int index = 0;
+	if (inputs.size() != m_inputNodes) {
+		perror("Number of input-values is not equal to number of input nodes! Assuming all other inputs are 0...");
+	}
+	for (vector<m_NodeGene>::iterator it = m_NodeGenes.begin(); it != m_NodeGenes.begin() + m_inputNodes; ++it) { //Carefull, the first nodes are always the input nodes!
+		if (index >= inputs.size()) { 
+			it->inputs.push_back(0.0);
+		}
+		else {
+			it->inputs.push_back(inputs[index]);
+		}
+		index++;
+	}
+	//Returning the output from the output-nodes
+	vector<double> outputs;
+	for (vector<m_NodeGene>::iterator it = m_NodeGenes.begin() + m_inputNodes; it != m_NodeGenes.begin() + m_inputNodes + m_outputNodes; ++it) {
+		outputs.push_back(it->output);
+	}
+	return outputs;
+}
+//Updating all outputs in nodes through their saved inputs
+void Species::updateInOutputs() {
+	for (vector<m_NodeGene>::iterator it = m_NodeGenes.begin(); it != m_NodeGenes.end(); ++it) {
+		double sumInputs = 0.0;
+		for (vector<double>::iterator it2 = it->inputs.begin(); it2 != it->inputs.end(); ++it2) {
+			sumInputs += *it2;
+		}
+		if (it->type == 0) {
+			it->output = linear(sumInputs);
+		}
+		if (it->type == 1) {
+			it->output = sigmoid(sumInputs);
+		}
+	}
+
+	//Delete the old inputs
+	for (vector<m_NodeGene>::iterator it = m_NodeGenes.begin(); it != m_NodeGenes.end(); ++it) {
+		it->inputs.clear();
+	}
+
+	//Update all inputs in nodes through connections
+	for (vector<m_ConnectionGene>::iterator it = m_ConnectionGenes.begin(); it != m_ConnectionGenes.end(); ++it) {
+		double input = 0.0;
+		input = m_NodeGenes[it->ConnFromNodeNumber].output * it->weight;
+		m_NodeGenes[it->ConnToNodeNumber].inputs.push_back(input);
+	}
+}
+
+//Process all mutationchances
+void Species::processMutation() {
+	mutateType();
+	mutateNode();
+	mutateAddConnection();
+}
+
+//Threshold functions
+//Linear threshold
+double Species::linear(const double &sum) {
+	if (sum <= 0.0) { return 0.0; }
+	else { return sum; }
+}
+
+//Sigmoid threshold
+double Species::sigmoid(const double &sum) {
+	return ((1 / (1 + exp(-sum))) - 0.5);
+}
 
 
 //Print this species
-void Species::print() {
+void Species::print(sf::RenderWindow &window) {
 	//Create window to draw in
 	float nodeRadius = 7.0f;
-	sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "Neural Network of species " + to_string(m_speciesNumber));
+
+	//Gather the font from the file
+	sf::Font font;
+	if (!font.loadFromFile("CurlyLou.ttf"))
+	{
+		perror("Font file couldnt be loaded.");
+	}
 
 	/*Drawing the nodes*/
 	//Vector of shapes for the neurons
@@ -149,7 +158,7 @@ void Species::print() {
 	int inputNeuronsNumber = 0;
 	int outputNeuronNumber = 0;
 	int hiddenNeuronNumber = 0;
-	for (vector<m_NodeGen>::iterator it = m_NodeGenomes.begin(); it != m_NodeGenomes.end(); ++it) {
+	for (vector<m_NodeGene>::iterator it = m_NodeGenes.begin(); it != m_NodeGenes.end(); ++it) {
 		if (it->sense == 0) {
 			inputNeuronsNumber += 1;
 		}
@@ -165,9 +174,12 @@ void Species::print() {
 	int numberHiddenNeuronsSoFar = 0;
 	//Position and node number is saved in a map for later connection drawing (TODO: Is there maybe a faster code to do this?)
 	map<int, vector<double>> nodePositons;
-	for (vector<m_NodeGen>::iterator it = m_NodeGenomes.begin(); it != m_NodeGenomes.end(); ++it) {
-		//Add the input neurons
+	//Text for the node-output-values
+	vector<vector<double>> textVector;
+	for (vector<m_NodeGene>::iterator it = m_NodeGenes.begin(); it != m_NodeGenes.end(); ++it) {
+		//Add the input neurons and their ouputvalue
 		if (it->sense == 0) {
+			//Create the neuron shape
 			sf::CircleShape tmp(nodeRadius);
 			tmp.setPosition(it->positionX, it->positionY);
 			if (it->type == 0) {
@@ -177,12 +189,17 @@ void Species::print() {
 				tmp.setFillColor(sf::Color::Blue);
 			}
 			neurons.push_back(tmp);
+			//Save the neuron shape positon
 			vector<double> position = { it->positionX, it->positionY };
 			nodePositons[it->number] = position;
 			numberInputNeuronsSoFar += 1;
+			//Save the neuron text positon
+			vector<double> text = { it->positionX - 2*nodeRadius, it->positionY - 1.5*nodeRadius , it->output };
+			textVector.push_back(text);
 		}
-		//Add the output neurons
+		//Add the output neurons and their ouputvalue
 		if (it->sense == -1) {
+			//Create the neuron shape
 			sf::CircleShape tmp(nodeRadius);
 			tmp.setPosition(it->positionX, it->positionY);
 			if (it->type == 0) {
@@ -192,12 +209,17 @@ void Species::print() {
 				tmp.setFillColor(sf::Color::Blue);
 			}
 			neurons.push_back(tmp);
+			//Save the neuron shape positon
 			vector<double> position = { it->positionX, it->positionY };
 			nodePositons[it->number] = position;
 			numberOutputNeuronsSoFar += 1;
+			//Save the neuron text positon
+			vector<double> text = { it->positionX - 2 * nodeRadius, it->positionY - 1.5*nodeRadius , it->output };
+			textVector.push_back(text);
 		}
-		//Add the deep layer neurons
+		//Add the deep layer neurons and their ouputvalue
 		if (it->sense != 0 && it->sense != -1) {
+			//Create the neuron shape
 			sf::CircleShape tmp(nodeRadius);
 			tmp.setPosition(it->positionX, it->positionY);
 			if (it->type == 0) {
@@ -207,9 +229,13 @@ void Species::print() {
 				tmp.setFillColor(sf::Color::Blue);
 			}
 			neurons.push_back(tmp);
+			//Save the neuron shape positon
 			vector<double> position = { it->positionX, it->positionY };
 			nodePositons[it->number] = position;
 			numberHiddenNeuronsSoFar += 1;
+			//Save the neuron text positon
+			vector<double> text = { it->positionX - 2 * nodeRadius, it->positionY - 1.5*nodeRadius , it->output };
+			textVector.push_back(text);
 		}
 	}
 
@@ -220,7 +246,7 @@ void Species::print() {
 	map<int, vector<double>>::iterator Position1;
 	map<int, vector<double>>::iterator Position2;
 	//Go through the m:ConnectionGen vector and look for connections that are enabled
-	for (vector<m_ConnectionGen>::iterator it = m_ConnectionGenomes.begin(); it != m_ConnectionGenomes.end(); ++it) {
+	for (vector<m_ConnectionGene>::iterator it = m_ConnectionGenes.begin(); it != m_ConnectionGenes.end(); ++it) {
 		if (it->enabled) {
 			Position1 = nodePositons.find(it->ConnFromNodeNumber);
 			if (Position1 == nodePositons.end()) {
@@ -242,69 +268,58 @@ void Species::print() {
 			lines.push_back(tmp);
 		}
 	}
-	while (window.isOpen())
-	{
-		sf::Event event;
-		while (window.pollEvent(event))
-		{
-			if (event.type == sf::Event::Closed)
-				window.close();
-		}
-		sf::Color color(100, 100, 100);
-		window.clear(color);
-		//Draw the nodes
-		for (vector<sf::CircleShape>::iterator it = neurons.begin(); it != neurons.end(); ++it) {
-			window.draw(*it);
-		}
-		//Draw the connections
-		for (vector<vector<sf::Vertex>>::iterator it = lines.begin(); it != lines.end(); ++it) {
-			//For some reason SFML only takes arrays but no vectors (maybe my fault) so we have to convert the vector back into an array
-			sf::Vertex vertexArray[] = { (*it)[0], (*it)[1] };
-			vertexArray[0].color = (*it)[0].color;
-			vertexArray[1].color = (*it)[1].color;
-			window.draw(vertexArray, 2, sf::Lines);
-		}
-		window.display();
+
+	//Draw the nodes
+	for (vector<sf::CircleShape>::iterator it = neurons.begin(); it != neurons.end(); ++it) {
+		window.draw(*it);
+	}
+	//Draw the connections
+	for (vector<vector<sf::Vertex>>::iterator it = lines.begin(); it != lines.end(); ++it) {
+		//For some reason SFML only takes arrays but no vectors (maybe my fault) so we have to convert the vector back into an array
+		sf::Vertex vertexArray[] = { (*it)[0], (*it)[1] };
+		vertexArray[0].color = (*it)[0].color;
+		vertexArray[1].color = (*it)[1].color;
+		window.draw(vertexArray, 2, sf::Lines);
+	}
+	//Draw the outputvalues
+	for (vector<vector<double>>::iterator it = textVector.begin(); it != textVector.end(); ++it) {
+		sf::Text text;
+		text.setFont(font);
+		text.setCharacterSize(16);
+		text.setFillColor(sf::Color::Black);
+		text.setOutlineColor(sf::Color::Black);
+		text.setString(to_string((*it)[2]));
+		sf::Vector2f pos((*it)[0], (*it)[1]);
+		text.setPosition(pos);
+		window.draw(text);
 	}
 }
 
-//Random engine call
-double Species::random_real() {
-	return distribution_real(mersenne_generator);
+//Print this species information about their nodes and connections
+void Species::printInfo() {
+	//Printing the information to the consolde
+	system("cls");
+
 }
 
-double Species::random_real_signed() {
-	return distribution_real_signed(mersenne_generator);
-}
-
-int Species::random_int() {
-	return distribution_int(mersenne_generator);
-}
-
-
-//Mutation for a connection
-void Species::mutateConnection() {
+//Mutations for a connection
+void Species::mutateAddConnection() {
 	//Does a mutation occur?
-	if (random_real() <= m_mutationRateConnection) {
+	if (randomReal(0.0, 1.0) <= m_mutationRateConnectionAdd) {
 		//If yes, take a random node
-		m_ConnectionGen tmp;
-		tmp.weight = random_real_signed();			//Every mutated weight starts with 1 to give the new species time to test this new node
+		m_ConnectionGene tmp;
+		tmp.weight = randomReal(-5.0, 5.0);			//Random weight for the new mutated node
 		tmp.innovationNumber = 0;					//STILL TO DO THE INNOVATION NUMBER!
 		tmp.enabled = true;							//New connection should of course be enabled
-		unsigned randomNode = random_int() % m_NodeGenomes.size();
+		unsigned randomNode = randomInt(0, m_NodeGenes.size() - 1);
 		//Check if this random node isnt already connected to every other node
 		while (true){
-			//Get the number of other nodes this node can be connected to (Only other sense nodes)
-			int numberOfConnectableNodes = 0;
-			for (vector<m_NodeGen>::iterator it = m_NodeGenomes.begin(); it != m_NodeGenomes.end(); ++it) {
-				if (it->sense != m_NodeGenomes[randomNode].sense) {
-					numberOfConnectableNodes += 1;
-				}
-			}
+			//Get the number of other nodes this node can be connected to
+			int numberOfConnectableNodes = m_NodeGenes.size() - 1;
 			//Count the nodes this node is already connected to
 			int numberOfConnectionForNode = 0;
-			for (vector<m_ConnectionGen>::iterator it = m_ConnectionGenomes.begin(); it != m_ConnectionGenomes.end(); ++it) {
-				if (it->ConnFromNodeNumber == randomNode || it->ConnToNodeNumber == randomNode) {
+			for (vector<m_ConnectionGene>::iterator it = m_ConnectionGenes.begin(); it != m_ConnectionGenes.end(); ++it) {
+				if (it->ConnFromNodeNumber == randomNode) {
 					numberOfConnectionForNode += 1;
 				}
 			}
@@ -312,7 +327,7 @@ void Species::mutateConnection() {
 			//If this node is connected to every other connectable node take a look at the next node
 			if (numberOfConnectionForNode == numberOfConnectableNodes) {
 				randomNode += 1;
-				if (randomNode >= m_NodeGenomes.size()) {
+				if (randomNode >= m_NodeGenes.size()) {
 					randomNode = 0;
 				}
 			}
@@ -335,23 +350,14 @@ void Species::mutateConnection() {
 
 		//Now finding the outputNode
 		//Check every other node if it already has a connection to the input node
-		randomNode = random_int() % m_NodeGenomes.size();
+		randomNode = randomInt(0, m_NodeGenes.size() - 1);
 		bool foundNode = true;
 		while (true) {
 			foundNode = true;
-			if (m_NodeGenomes[randomNode].sense == m_NodeGenomes[tmp.ConnFromNodeNumber].sense) {
-				randomNode += 1;
-				if (randomNode >= m_NodeGenomes.size()) {
-					randomNode = 0;
-				}
-				foundNode = false;
-				continue;
-			}
-			for (vector<m_ConnectionGen>::iterator it = m_ConnectionGenomes.begin(); it != m_ConnectionGenomes.end(); ++it) {
-				//If this node is a node from the same sense, continue the loop				
-				if ((it->ConnFromNodeNumber == tmp.ConnFromNodeNumber && randomNode == it->ConnToNodeNumber) || (it->ConnToNodeNumber == tmp.ConnFromNodeNumber && randomNode == it->ConnFromNodeNumber)) {
+			for (vector<m_ConnectionGene>::iterator it = m_ConnectionGenes.begin(); it != m_ConnectionGenes.end(); ++it) {			
+				if ((it->ConnFromNodeNumber == tmp.ConnFromNodeNumber && randomNode == it->ConnToNodeNumber)) {
 					randomNode += 1;
-					if (randomNode >= m_NodeGenomes.size()) {
+					if (randomNode >= m_NodeGenes.size()) {
 						randomNode = 0;
 					}
 					foundNode = false;
@@ -363,55 +369,106 @@ void Species::mutateConnection() {
 				break;
 			}
 		}
-		m_ConnectionGenomes.push_back(tmp);
+		m_ConnectionGenes.push_back(tmp);
+	}
+}
+
+void Species::mutateConnection() {
+	//Is there a connection for a mutation?
+	if (m_ConnectionGenes.size() == 0) { return; }
+	//Does a mutation occur?
+	if (randomReal(0.0, 1.0) <= m_mutationRateConnection) {
+		int randomConnection = randomInt(0, m_ConnectionGenes.size());
+		m_ConnectionGenes[randomConnection].weight += randomReal(-2.0 * m_ConnectionGenes[randomConnection].weight, 2.0 * m_ConnectionGenes[randomConnection].weight);
+	}
+}
+
+void Species::mutateConnectionEnabling() {
+	//Is there a connection for a mutation?
+	if (m_ConnectionGenes.size() == 0) { return; }
+	//Does a mutation occur?
+	if (randomReal(0.0, 1.0) <= m_mutationRateConnection) {
+		int randomConnection = randomInt(0, m_ConnectionGenes.size());
+		m_ConnectionGenes[randomConnection].enabled != m_ConnectionGenes[randomConnection].enabled;
 	}
 }
 
 //Mutation for an additional node
 void Species::mutateNode() {
 	//Is there a connection for a mutation?
-	if (m_ConnectionGenomes.size() == 0) { return; }
+	if (m_ConnectionGenes.size() == 0) { return; }
 	//Does a mutation occur?
-	if (random_real() <= m_mutationRateNode) {
+	if (randomReal(0.0, 1.0) <= m_mutationRateNode) {
 		//Yes, then add a node
-		m_NodeGen tmp;
-		tmp.number = m_NodeGenomes.size(); //STILL TO DO THE INNOVATION NUMBER!
+		m_NodeGene tmp;
+		tmp.number = m_NodeGenes.size(); //STILL TO DO THE INNOVATION NUMBER!
 		tmp.sense = 1;	//New nodes are for now always in the hidden layer (TODO: Maybe later give additional input/output nodes?!)
 		//Getting randomly the type of this neuron
-		if (random_real() <= 0.5) {
+		if (randomReal(0.0, 1.0) <= 0.5) {
 			tmp.type = 0;
 		}
 		else {
 			tmp.type = 1;
 		}
 		//Set up the new inbetween connection
-		int randomConnection = random_int() % m_ConnectionGenomes.size();
-		for (unsigned i = 0; i < m_ConnectionGenomes.size(); i++) {
-			if (m_ConnectionGenomes[randomConnection + i % m_ConnectionGenomes.size()].enabled) {
+		int randomConnection = randomInt(0, m_ConnectionGenes.size());
+		for (unsigned i = 0; i < m_ConnectionGenes.size(); i++) {
+			if (m_ConnectionGenes[randomConnection + i % m_ConnectionGenes.size()].enabled) {
 				//Disable the connection
-				m_ConnectionGenomes[randomConnection + i % m_ConnectionGenomes.size()].enabled = false;
+				m_ConnectionGenes[randomConnection + i % m_ConnectionGenes.size()].enabled = false;
 				//Connect the 2 before nodes with the new node
-				m_ConnectionGen conn1;
-				m_ConnectionGen conn2;
-				conn1.ConnFromNodeNumber = m_ConnectionGenomes[randomConnection + i % m_ConnectionGenomes.size()].ConnFromNodeNumber;
+				m_ConnectionGene conn1;
+				m_ConnectionGene conn2;
+				conn1.ConnFromNodeNumber = m_ConnectionGenes[randomConnection + i % m_ConnectionGenes.size()].ConnFromNodeNumber;
 				conn1.ConnToNodeNumber = tmp.number;
 				conn2.ConnFromNodeNumber = tmp.number;
-				conn2.ConnToNodeNumber = m_ConnectionGenomes[randomConnection + i % m_ConnectionGenomes.size()].ConnToNodeNumber;
+				conn2.ConnToNodeNumber = m_ConnectionGenes[randomConnection + i % m_ConnectionGenes.size()].ConnToNodeNumber;
 				conn1.enabled = true;
 				conn2.enabled = true;
 				conn1.weight = 1.0;
-				conn2.weight = m_ConnectionGenomes[randomConnection + i % m_ConnectionGenomes.size()].weight;
+				conn2.weight = m_ConnectionGenes[randomConnection + i % m_ConnectionGenes.size()].weight;
 				//Set the new node position
-				tmp.positionX = (m_NodeGenomes[m_ConnectionGenomes[randomConnection + i % m_ConnectionGenomes.size()].ConnFromNodeNumber].positionX + m_NodeGenomes[m_ConnectionGenomes[randomConnection + i % m_ConnectionGenomes.size()].ConnToNodeNumber].positionX) / 2.0;
-				tmp.positionY = (m_NodeGenomes[m_ConnectionGenomes[randomConnection + i % m_ConnectionGenomes.size()].ConnFromNodeNumber].positionY + m_NodeGenomes[m_ConnectionGenomes[randomConnection + i % m_ConnectionGenomes.size()].ConnToNodeNumber].positionY) / 2.0;
+				tmp.positionX = (m_NodeGenes[m_ConnectionGenes[randomConnection + i % m_ConnectionGenes.size()].ConnFromNodeNumber].positionX + m_NodeGenes[m_ConnectionGenes[randomConnection + i % m_ConnectionGenes.size()].ConnToNodeNumber].positionX) / 2.0;
+				tmp.positionY = (m_NodeGenes[m_ConnectionGenes[randomConnection + i % m_ConnectionGenes.size()].ConnFromNodeNumber].positionY + m_NodeGenes[m_ConnectionGenes[randomConnection + i % m_ConnectionGenes.size()].ConnToNodeNumber].positionY) / 2.0;
 				//TODO. INOOVATION NUMBER!
 				//Push the new connection into the vector of connections
-				m_ConnectionGenomes.push_back(conn1);
-				m_ConnectionGenomes.push_back(conn2);
+				m_ConnectionGenes.push_back(conn1);
+				m_ConnectionGenes.push_back(conn2);
 				//Push the new node into the vector
-				m_NodeGenomes.push_back(tmp);
+				m_NodeGenes.push_back(tmp);
 				break;
 			}
 		}
 	}
 }
+
+//Mutation for a type change
+void Species::mutateType() {
+	//Does a mutation occur?
+	if (randomReal(0.0,1.0) <= m_mutationRateType) {
+		unsigned randomNode = randomInt(0, m_NodeGenes.size());
+		if (m_NodeGenes[randomNode].type == 0) {
+			m_NodeGenes[randomNode].type = 1;
+		}
+		else {
+			m_NodeGenes[randomNode].type = 0;
+		}
+
+	}
+}
+
+//Random engine call
+double Species::randomReal(const double lowerBoundary, const double upperBoundary) {
+	uniform_real_distribution<double> distribution_real(lowerBoundary, upperBoundary);
+	return distribution_real(mersenne_generator);
+}
+
+int Species::randomInt(const int lowerBoundary, const int upperBoundary) {
+	uniform_int_distribution<int> distribution_int(lowerBoundary, upperBoundary);
+	return distribution_int(mersenne_generator);
+}
+
+//Random engine initialisation
+random_device Species::seed_generator;
+unsigned Species::seed = seed_generator();
+mt19937 Species::mersenne_generator(Species::seed);
