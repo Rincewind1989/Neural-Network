@@ -50,6 +50,11 @@ public:
 	//Sigmoid threshold
 	double sigmoid(const double &sum);
 
+	//Getter/Setter and Adder for fitness value
+	void setFitness(double fitness) { m_fitness = fitness; }
+	double getFitness() { return m_fitness; }
+	void addFitness(double addValue) { m_fitness += addValue; }
+
 	//Random generator 
 	double randomReal(const double lowerBoundary, const double upperBoundary);
 	int randomInt(const int lowerBoundary, const int upperBoundary);
@@ -94,4 +99,5 @@ private:
 	int m_speciesNumber;
 	int m_inputNodes;
 	int m_outputNodes;
+	double m_fitness;
 };

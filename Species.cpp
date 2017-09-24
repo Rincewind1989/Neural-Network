@@ -124,6 +124,7 @@ void Species::processMutation() {
 	mutateType();
 	mutateNode();
 	mutateAddConnection();
+	mutateConnection();
 }
 
 //Threshold functions
@@ -141,9 +142,7 @@ double Species::sigmoid(const double &sum) {
 
 //Print this species
 void Species::print(sf::RenderWindow &window) {
-	//Create window to draw in
 	float nodeRadius = 7.0f;
-
 	//Gather the font from the file
 	sf::Font font;
 	if (!font.loadFromFile("CurlyLou.ttf"))
@@ -299,6 +298,23 @@ void Species::print(sf::RenderWindow &window) {
 void Species::printInfo() {
 	//Printing the information to the consolde
 	system("cls");
+	cout << "This species information:\n\n";
+	cout << "Fitness: " << m_fitness << endl;
+	cout << "Number of nodes: " << m_NodeGenes.size() << endl;
+	cout << "Number of input-nodes: " << m_inputNodes << endl;
+	cout << "Number of output-Nodes: " << m_outputNodes << endl;
+	cout << "Number of hidden-nodes: " << m_NodeGenes.size() - m_inputNodes - m_outputNodes << endl;
+	cout << "Number of connections: " << m_ConnectionGenes.size() << endl;
+	int numberBadConnections = 0;
+	int numberGoodConnections = 0;
+	for (vector<m_ConnectionGene>::iterator it = m_ConnectionGenes.begin(); it != m_ConnectionGenes.end(); it++) {
+		if (it->weight < 0.0)
+			numberBadConnections += 1;
+		if (it->weight > 0.0)
+			numberGoodConnections += 1;
+	}
+	cout << "Number of negative connections: " << numberBadConnections << endl;
+	cout << "Number of positive connections: " << numberGoodConnections << endl;
 
 }
 
@@ -372,7 +388,6 @@ void Species::mutateAddConnection() {
 		m_ConnectionGenes.push_back(tmp);
 	}
 }
-
 void Species::mutateConnection() {
 	//Is there a connection for a mutation?
 	if (m_ConnectionGenes.size() == 0) { return; }
@@ -382,7 +397,6 @@ void Species::mutateConnection() {
 		m_ConnectionGenes[randomConnection].weight += randomReal(-2.0 * m_ConnectionGenes[randomConnection].weight, 2.0 * m_ConnectionGenes[randomConnection].weight);
 	}
 }
-
 void Species::mutateConnectionEnabling() {
 	//Is there a connection for a mutation?
 	if (m_ConnectionGenes.size() == 0) { return; }
