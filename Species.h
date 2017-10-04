@@ -10,11 +10,32 @@
 
 using namespace std;
 
+//Struct for the genome of a node
+struct m_NodeGene {
+	int sense;						//Which layer this node is (0 = input, -1 = output, 1 = hidden)
+	int number;						//Historical marking number for nodes
+	int type;						//What type of threshold function this is
+	float positionX;				//X Position for the print function
+	float positionY;				//Y Position for the print function
+	vector<double>	inputs = { 0.0 };	//Inputs in this node
+	double output;					//Output of this node
+
+};
+
+//Struct for the genome of a connection
+struct m_ConnectionGene {
+	int ConnFromNodeNumber;	//Node from which the connection flows from
+	int ConnToNodeNumber;	//Node to which the connection flows
+	double weight;			//Connection weight between the two nodes
+	bool enabled;			//Is this connection enabled or not?
+	int historicalNumber;	//Historical marking number for connections
+};
+
 class Species
 {
 public:
-	Species(const int &numberInputNodes, const int &numberOutputNodes, const int &numberConnections, const double &HEIGHT, const double &WIDTH, const double &crossing = 0.8, const double &mutationConnAdd = 0.05, const double &mutationNode = 0.05, const double &mutateType = 0.05, const double &mutateConn = 0.05);
-	Species(const Species &mother, const Species &father, const double &crossing = 0.8, const double &mutationConnAdd = 0.05, const double &mutationNode = 0.05, const double &mutateType = 0.05, const double &mutateConn = 0.05);
+	Species(const int &numberInputNodes, const int &numberOutputNodes, const int &numberConnections, int &historicalMarkingNumber,vector<Species> &generation, const double &HEIGHT, const double &WIDTH, const int &speciesNumber, const double &crossing = 0.8, const double &mutationConnAdd = 0.05, const double &mutationNode = 0.05, const double &mutateType = 0.05, const double &mutateConn = 0.05);
+	Species(const Species &mother, const Species &father, int &historicalMarkingNumber, vector<Species> &generation, const double &crossing = 0.8, const double &mutationConnAdd = 0.05, const double &mutationNode = 0.05, const double &mutateType = 0.05, const double &mutateConn = 0.05);
 	~Species();
 
 	//Setting mutation rate for this species (It can be possible to have different mutation rates for different species)
@@ -25,24 +46,28 @@ public:
 	void updateInOutputs();
 
 	//Mutation for a connection
-	void mutateAddConnection();
+	void mutateAddConnection(int &historicalMarkingCounter, vector<Species> &generation);
 	void mutateConnection();
 	void mutateConnectionEnabling();
 
 	//Mutation for additional node
-	void mutateNode();
+	void mutateNode(int &historicalMarkingCounter, vector<Species> &generation);
 
 	//Mutation for a type change
 	void mutateType();
+
+	//Checks the other species for same mutated connections to keep historical marking organized
+	void checkHistoricalMarkings(vector<Species> &generation, int &historicalMarkingCounter, m_ConnectionGene &newConnection);
 
 	//Print this species
 	void print(sf::RenderWindow &window);
 
 	//Print this species information about their nodes and connections
-	void printInfo();
+	void printInfo(int &generationNumber);
+	void printHistoricalMarking();
 
 	//Process all mutationchances
-	void processMutation();
+	void processMutation(int &historicalMarkingNumber, vector<Species> &generation);
 
 	//Threshold functions
 	//Linear threshold
@@ -69,27 +94,6 @@ private:
 	double m_mutationRateNode = 0.05;
 	double m_mutationRateType = 0.05;
 	double m_mutationRateConnectionAdd = 0.05;
-
-	//Struct for the genome of a node
-	struct m_NodeGene {
-		int sense;						//Which layer this node is (0 = input, -1 = output, 1 = hidden)
-		int number;						//Historical marking number
-		int type;						//What type of threshold function this is
-		float positionX;				//X Position for the print function
-		float positionY;				//Y Position for the print function
-		vector<double>	inputs = {0.0};	//Inputs in this node
-		double output;					//Output of this node
-
-	};
-
-	//Struct for the genome of a connection
-	struct m_ConnectionGene {
-		int ConnFromNodeNumber;	//Node from which the connection flows from
-		int ConnToNodeNumber;	//Node to which the connection flows
-		double weight;			//Connection weight between the two nodes
-		int innovationNumber;	//This is the historical marking of the Connection
-		bool enabled;			//Is this connection enabled or not?
-	};
 
 	//The Node and Connection Genomes are saved in a vector
 	vector<m_NodeGene> m_NodeGenes;
