@@ -21,6 +21,10 @@ public:
 		vector<projectile> &projectiles,
 		playerStruct &player);
 
+
+	//Grabs the events on both windows
+	void getEvents();
+
 private:
 
 	//The Font of the text

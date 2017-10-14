@@ -19,17 +19,21 @@ public:
 
 
 	//Process player moves
-	void Game::processPlayer(
+	void processPlayer(
 		const vector<double> &outputs);
 
 
 	//Processes the logic of the game
-	void Game::processLogic(
+	bool processLogic(
 		vector<double> outputs);
 
 
+	//Collision checks
+	bool collisionCheck();
+
+
 	//Processes the time
-	void Game::processTime();
+	void processTime();
 
 
 	//Creates a new projectile with a random velocity
@@ -46,6 +50,22 @@ public:
 
 	//Returns the projectiles
 	vector<projectile> &getProjectiles();
+
+
+	//Cleans the game from every projectile for a fresh new start
+	void cleanGame();
+
+
+	//Checks the time if Information should be printed to the terminal
+	bool printToTerminal();
+
+
+	//Returns a Fitness value that is the delta value since last time
+	double returnFitnessDelta();
+
+
+	//Gets the input of the game for the neural network
+	vector<double> getInput();
 
 
 	//Random generator 

@@ -48,6 +48,7 @@ Generation::Generation()
 Generation::Generation(
 	Generation &lastGeneration)
 {
+	m_historicalMarking = lastGeneration.getHistoricalMarking();
 }
 
 
@@ -56,7 +57,231 @@ Generation::~Generation()
 }
 
 
-//Add a connection
+//Breeds a new Organism by combining the Genomes of the father and mother and adds random mutations
+//(HAVE TO RETHINK HOW TO BREED THE NODES, IF THE NODES SHALL HAVE SPECIFICATIONS TOO!)
+Organism Generation::breedNewOrganism(
+	Organism &father, 
+	Organism &mother)
+{
+	//Breed the parents together and create the new gnome, also finds the highest node number to determine how many hidden nodeGenes are needed
+	Genome childGenome;
+	int highestNodeNumber = 0;
+	if (father.getFitness() > mother.getFitness())
+	{
+		for (vector<ConnectionGene>::iterator it = father.getGenome().m_ConnectionGenes.begin(); it != father.getGenome().m_ConnectionGenes.end(); ++it)
+		{
+			//Searches for the higehst Node number
+			if (it->ConnFromNodeNumber > highestNodeNumber)
+			{
+				highestNodeNumber = it->ConnFromNodeNumber;
+			}
+			if (it->ConnToNodeNumber > highestNodeNumber)
+			{
+				highestNodeNumber = it->ConnToNodeNumber;
+			}
+
+			//Comparisson with mother
+			for (vector<ConnectionGene>::iterator it2 = mother.getGenome().m_ConnectionGenes.begin(); it2 != mother.getGenome().m_ConnectionGenes.end(); ++it2)
+			{
+				//Searches for the higehst Node number
+				if (it2->ConnFromNodeNumber > highestNodeNumber)
+				{
+					highestNodeNumber = it2->ConnFromNodeNumber;
+				}
+				if (it2->ConnToNodeNumber > highestNodeNumber)
+				{
+					highestNodeNumber = it2->ConnToNodeNumber;
+				}
+
+				//Checks the connections genes
+				if (it->historicalNumber == it2->historicalNumber) 
+				{
+					if (randomReal(0.0, 1.0) <= 0.5)
+					{
+						childGenome.m_ConnectionGenes.push_back(*it);
+						mutateConnectionEnabling(childGenome.m_ConnectionGenes[childGenome.m_ConnectionGenes.size() - 1]);
+						break;
+					}
+					else
+					{
+						childGenome.m_ConnectionGenes.push_back(*it2);
+						mutateConnectionEnabling(childGenome.m_ConnectionGenes[childGenome.m_ConnectionGenes.size() - 1]);
+						break;
+					}
+				}
+				else
+				{
+					childGenome.m_ConnectionGenes.push_back(*it);
+					mutateConnectionEnabling(childGenome.m_ConnectionGenes[childGenome.m_ConnectionGenes.size() - 1]);
+					break;
+				}
+			}
+		}
+	}
+	else
+	{
+		for (vector<ConnectionGene>::iterator it = mother.getGenome().m_ConnectionGenes.begin(); it != mother.getGenome().m_ConnectionGenes.end(); ++it)
+		{
+			//Searches for the higehst Node number
+			if (it->ConnFromNodeNumber > highestNodeNumber)
+			{
+				highestNodeNumber = it->ConnFromNodeNumber;
+			}
+			if (it->ConnToNodeNumber > highestNodeNumber)
+			{
+				highestNodeNumber = it->ConnToNodeNumber;
+			}
+
+			//Comparisson to the father
+			for (vector<ConnectionGene>::iterator it2 = father.getGenome().m_ConnectionGenes.begin(); it2 != father.getGenome().m_ConnectionGenes.end(); ++it2)
+			{
+				//Searches for the higehst Node number
+				if (it2->ConnFromNodeNumber > highestNodeNumber)
+				{
+					highestNodeNumber = it2->ConnFromNodeNumber;
+				}
+				if (it2->ConnToNodeNumber > highestNodeNumber)
+				{
+					highestNodeNumber = it2->ConnToNodeNumber;
+				}
+
+				//Checks the connections genes
+				if (it->historicalNumber == it2->historicalNumber)
+				{
+					if (randomReal(0.0, 1.0) <= 0.5)
+					{
+						childGenome.m_ConnectionGenes.push_back(*it);
+						mutateConnectionEnabling(childGenome.m_ConnectionGenes[childGenome.m_ConnectionGenes.size() - 1]);
+						break;
+					}
+					else
+					{
+						childGenome.m_ConnectionGenes.push_back(*it2);
+						mutateConnectionEnabling(childGenome.m_ConnectionGenes[childGenome.m_ConnectionGenes.size() - 1]);
+						break;
+					}
+				}
+				else
+				{
+					childGenome.m_ConnectionGenes.push_back(*it);
+					mutateConnectionEnabling(childGenome.m_ConnectionGenes[childGenome.m_ConnectionGenes.size() - 1]);
+					break;
+				}
+			}
+		}
+	}
+
+	//Creating the input nodes
+	childGenome.m_inputNodes = NUMBER_OF_INDEPENDENT_VARAIABLES;
+	childGenome.m_outputNodes = NUMBER_OF_DEPENDENT_VARIABLES;
+
+	for (int i = 0; i < childGenome.m_inputNodes; i++)
+	{
+		NodeGene tmp;
+		tmp.nodeType = 0;
+		tmp.number = childGenome.m_NodeGenes.size();
+		tmp.type = 1;
+		childGenome.m_NodeGenes.push_back(tmp);
+	}
+
+	//Creating the output nodes
+	for (int i = 0; i < childGenome.m_outputNodes; i++)
+	{
+		NodeGene tmp;
+		tmp.nodeType = -1;
+		tmp.number = childGenome.m_NodeGenes.size();
+		tmp.type = 1;
+		childGenome.m_NodeGenes.push_back(tmp);
+	}
+
+	//Creating the hidden nodes
+	for (int i = childGenome.m_inputNodes + childGenome.m_outputNodes; i < highestNodeNumber; i++)
+	{
+		NodeGene tmp;
+		tmp.nodeType = 1;
+		tmp.number = childGenome.m_NodeGenes.size();
+		tmp.type = 1;
+		childGenome.m_NodeGenes.push_back(tmp);
+	}
+
+	//Add random mutations
+	processMutation(childGenome);
+
+	Organism child(childGenome);
+	return child;
+}
+
+
+//Compares two Organism for the speciation of NEAT and returns their compatibility
+double Generation::compatibilityDistance(
+	Organism &organism1, 
+	Organism &organism2)
+{
+
+	//Get the organism with the higher innovation number
+	Organism* highOrganism;
+	Organism* lowOrganism;
+	if (organism1.getHighestInnovationNumber() > organism2.getHighestInnovationNumber())
+	{
+		highOrganism = &organism1;
+		lowOrganism = &organism2;
+	}
+	else
+	{
+		lowOrganism = &organism1;
+		highOrganism = &organism2;
+	}
+
+	//Compare the tow organisms
+	int disjointNumber = 0;
+	int excessNumber = 0;
+	double weightSum = 0.0;
+	int matchingGenes = 0;
+	bool matchGene = false;
+	for (vector<ConnectionGene>::iterator it = highOrganism->getGenome().m_ConnectionGenes.begin(); it != highOrganism->getGenome().m_ConnectionGenes.end(); ++it)
+	{
+		matchGene = false;
+		for (vector<ConnectionGene>::iterator it2 = lowOrganism->getGenome().m_ConnectionGenes.begin(); it2 != lowOrganism->getGenome().m_ConnectionGenes.end(); ++it2)
+		{
+			//If a matching gene was found, get the weight difference
+			if (it->historicalNumber == it2->historicalNumber)
+			{
+				matchingGenes += 1;
+				weightSum += fabs(it->weight - it2->weight);
+				matchGene = true;
+				break;
+			}
+		}
+
+		//If not a matching gene was found
+		if (!matchGene)
+		{
+			if (it->historicalNumber <= organism2.getHighestInnovationNumber())
+			{
+				disjointNumber += 1;
+			}
+			else
+			{
+				excessNumber += 1;
+			}
+		}
+	}
+	//Get highest number of nodes
+	int N = 1;
+	if (organism1.getGenome().m_NodeGenes.size() > organism2.getGenome().m_NodeGenes.size())
+	{
+		N = organism1.getGenome().m_NodeGenes.size();
+	}
+	else
+	{
+		N = organism2.getGenome().m_NodeGenes.size();
+	}
+	//Combine everything to the compatibility distance
+	double sum = disjointNumber*DISJOINT_COMPATIBILITY / N + excessNumber*EXCESS_COMPATIBILITY / N + WEIGHT_COMPATIBILITY*weightSum / matchingGenes;
+	return sum;
+}
+
+//Adds a connection
 void Generation::addConnection(Genome &genome) {
 	//If yes, take a random node
 	ConnectionGene tmp;
@@ -144,7 +369,6 @@ void Generation::addConnection(Genome &genome) {
 //Process all mutations
 void Generation::processMutation(Genome &genome)
 {
-	mutateType(genome);
 	mutateNode(genome);
 	mutateAddConnection(genome);
 	mutateConnection(genome);
@@ -246,20 +470,17 @@ void Generation::mutateConnection(Genome &genome) {
 	if (genome.m_ConnectionGenes.size() == 0) { return; }
 	//Does a mutation occur?
 	if (randomReal(0.0, 1.0) <= MUTATION_RATE_CONNECTION) {
-		int randomConnection = randomInt(0, genome.m_ConnectionGenes.size());
+		int randomConnection = randomInt(0, genome.m_ConnectionGenes.size() - 1);
 		genome.m_ConnectionGenes[randomConnection].weight += randomReal(-2.0 * genome.m_ConnectionGenes[randomConnection].weight, 2.0 * genome.m_ConnectionGenes[randomConnection].weight);
 	}
 }
 
 
 //Mutates that a connection is dis or enabled
-void Generation::mutateConnectionEnabling(Genome &genome) {
-	//Is there a connection for a mutation?
-	if (genome.m_ConnectionGenes.size() == 0) { return; }
+void Generation::mutateConnectionEnabling(ConnectionGene &connection) {
 	//Does a mutation occur?
 	if (randomReal(0.0, 1.0) <= MUTATION_RATE_ENABLING) {
-		int randomConnection = randomInt(0, genome.m_ConnectionGenes.size());
-		genome.m_ConnectionGenes[randomConnection].enabled != genome.m_ConnectionGenes[randomConnection].enabled;
+		connection.enabled != connection.enabled;
 	}
 }
 
@@ -311,7 +532,7 @@ void Generation::mutateNode(Genome &genome)
 }
 
 
-//Mutation for a type change
+//Mutation for a type change (FOR NOW NOT IMPLEMENTED)
 void Generation::mutateType(Genome &genome)
 {
 	//Does a mutation occur?
@@ -337,7 +558,6 @@ void Generation::checkHistoricalMarkings(
 {
 	for (vector<Organism>::iterator it = m_organisms.begin(); it != m_organisms.end(); ++it)
 	{
-		//Because of a bug im compiler we have to use this dummy genome
 		for (vector<ConnectionGene>::iterator it2 = it->getGenome().m_ConnectionGenes.begin(); it2 != it->getGenome().m_ConnectionGenes.end(); ++it2)
 		{
 			if (newConnection.ConnFromNodeNumber == it2->ConnFromNodeNumber && newConnection.ConnToNodeNumber == it2->ConnToNodeNumber)

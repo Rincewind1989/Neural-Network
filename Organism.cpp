@@ -6,6 +6,7 @@
 Organism::Organism(Genome &genome):
 	m_genome(genome)
 {
+	m_fitness = 0.0;
 }
 
 
@@ -76,7 +77,7 @@ void Organism::processNeuralNetwork()
 
 
 //Returns the output of the Organism as a vector of doubles
-vector<double>& Organism::getOutputs()
+vector<double> Organism::getOutputs()
 {
 	//Returning the output from the output-nodes
 	vector<double> outputs;
@@ -93,12 +94,11 @@ vector<double>& Organism::getOutputs()
 
 
 //Print this organisms information about their nodes and connections
-void Organism::printInfo(
-	int &generationNumber)
+void Organism::printInfo()
 {
 	//Printing the information to the consolde
 	system("cls");
-	cout << "Organism information:\n\n";
+	cout << "Organism`s information:\n\n";
 	cout << "Fitness: " << m_fitness << endl;
 	cout << "Number of nodes: " << m_genome.m_NodeGenes.size() << endl;
 	cout << "Number of input-nodes: " << m_genome.m_inputNodes << endl;
@@ -116,8 +116,30 @@ void Organism::printInfo(
 	}
 	cout << "Number of negative connections: " << numberBadConnections << endl;
 	cout << "Number of positive connections: " << numberGoodConnections << endl;
-
+	cout << "\nGenome information:\n";
+	for (vector<ConnectionGene>::iterator it = m_genome.m_ConnectionGenes.begin(); it != m_genome.m_ConnectionGenes.end(); ++it)
+	{
+		cout << "From: " << it->ConnFromNodeNumber << "\n";
+		cout << "To: " << it->ConnToNodeNumber << "\n";
+		cout << "Historical Marking: " << it->historicalNumber << "\n\n";
+	}
 }
+
+
+//Returns the highest innovation number of this Species
+int Organism::getHighestInnovationNumber()
+{
+	int highestInnovationNumber = 0;
+	for (vector<ConnectionGene>::iterator it = m_genome.m_ConnectionGenes.begin(); it != m_genome.m_ConnectionGenes.end(); ++it)
+	{
+		if (it->historicalNumber > highestInnovationNumber)
+		{
+			highestInnovationNumber = it->historicalNumber;
+		}
+	}
+	return highestInnovationNumber;
+}
+
 
 /*THRESHOLD FUNCTIONS*/
 //Linear threshold

@@ -15,6 +15,8 @@ GraphicHandler::GraphicHandler()
 		perror("Font file couldnt be loaded.");
 	}
 	m_font = font;
+
+
 }
 
 
@@ -65,7 +67,7 @@ void GraphicHandler::printOrganism(
 	//Text for the node-output-values
 	vector<vector<double>> textVector;
 
-	//Because of a compiler bug we have to define a dummy Genome here
+	//Iterating over every Node
 	for (vector<NodeGene>::iterator it = organism.getGenome().m_NodeGenes.begin(); it != organism.getGenome().m_NodeGenes.end(); ++it)
 	{
 		//Add the input neurons and their ouputvalue
@@ -88,10 +90,11 @@ void GraphicHandler::printOrganism(
 			//Save the neuron shape positon
 			vector<double> position = { 25.0f, (HEIGHT_NETWORK / inputNeuronsNumber + 1) * numberInputNeuronsSoFar + 2 * NODE_RADIUS };
 			nodePositons[it->number] = position;
-			numberInputNeuronsSoFar += 1;
+
 			//Save the neuron text positon
 			vector<double> text = { 25.0f - 2 * NODE_RADIUS, (HEIGHT_NETWORK / inputNeuronsNumber + 1) * numberInputNeuronsSoFar + 2 * NODE_RADIUS - 2.5*NODE_RADIUS , it->output };
 			textVector.push_back(text);
+			numberInputNeuronsSoFar += 1;
 		}
 
 		//Add the output neurons and their ouputvalue
@@ -114,10 +117,11 @@ void GraphicHandler::printOrganism(
 			//Save the neuron shape positon
 			vector<double> position = { WIDTH_NETWORK - 25.0f - 2 * NODE_RADIUS , (HEIGHT_NETWORK / outputNeuronNumber + 1) * numberOutputNeuronsSoFar + 2 * NODE_RADIUS };
 			nodePositons[it->number] = position;
-			numberOutputNeuronsSoFar += 1;
+
 			//Save the neuron text positon
 			vector<double> text = { WIDTH_NETWORK - 25.0f - 2 * NODE_RADIUS - 2 * NODE_RADIUS, (HEIGHT_NETWORK / outputNeuronNumber + 1) * numberOutputNeuronsSoFar + 2 * NODE_RADIUS - 2.5*NODE_RADIUS , it->output };
 			textVector.push_back(text);
+			numberOutputNeuronsSoFar += 1;
 		}
 
 		//Add the deep layer neurons and their ouputvalue
@@ -142,10 +146,11 @@ void GraphicHandler::printOrganism(
 			//Save the neuron shape positon
 			vector<double> position = { WIDTH_NETWORK / 2.0, (HEIGHT_NETWORK / hiddenNeuronNumber) * numberHiddenNeuronsSoFar + 2 * NODE_RADIUS };
 			nodePositons[it->number] = position;
-			numberHiddenNeuronsSoFar += 1;
+
 			//Save the neuron text positon
 			vector<double> text = { WIDTH_NETWORK / 2.0 - 2 * NODE_RADIUS, (HEIGHT_NETWORK / hiddenNeuronNumber) * numberHiddenNeuronsSoFar + 2 * NODE_RADIUS - 2.5*NODE_RADIUS , it->output };
 			textVector.push_back(text);
+			numberHiddenNeuronsSoFar += 1;
 		}
 	}
 
@@ -155,7 +160,7 @@ void GraphicHandler::printOrganism(
 	//Map iterator for the 2 vertex positions of the connetion ends
 	map<int, vector<double>>::iterator Position1;
 	map<int, vector<double>>::iterator Position2;
-	//Go through the m:ConnectionGen vector and look for connections that are enabled
+	//Go through the m_ConnectionGen vector and look for connections that are enabled
 	for (vector<ConnectionGene>::iterator it = organism.getGenome().m_ConnectionGenes.begin(); it != organism.getGenome().m_ConnectionGenes.end(); ++it)
 	{
 		if (it->enabled)
@@ -247,4 +252,18 @@ void GraphicHandler::printGame(
 	projectileShapes.push_back(tmp);
 	m_gameWindow.draw(tmp);
 	m_gameWindow.display();
+}
+
+
+//Grabs the events on both windows
+void GraphicHandler::getEvents()
+{
+	sf::Event event;
+	while (m_neuralNetworkWindow.pollEvent(event) || m_gameWindow.pollEvent(event))
+	{
+		if (event.type == sf::Event::Closed) {
+			m_neuralNetworkWindow.close();
+			m_gameWindow.close();
+		}
+	}
 }

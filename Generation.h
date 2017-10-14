@@ -15,6 +15,19 @@ public:
 	Generation(Generation &lastGeneration);
 	~Generation();
 
+
+	//Breeds a new Organism by combining the Genomes of the father and mother and adds random mutations
+	Organism breedNewOrganism(
+		Organism &father,
+		Organism &mother);
+
+
+	//Compares  the compatibility of two Organism for the speciation of NEAT
+	double compatibilityDistance(
+		Organism &organism1,
+		Organism &organism2);
+
+
 	//Add a connection
 	void addConnection(Genome &genome);
 
@@ -32,7 +45,7 @@ public:
 
 
 	//Mutates a connection to enabled or disabled
-	void mutateConnectionEnabling(Genome &genome);
+	void mutateConnectionEnabling(ConnectionGene &connection);
 
 
 	//Mutation for additional node
@@ -54,6 +67,11 @@ public:
 
 	//Gets an organism out of this generation by index
 	vector<Organism> &getOrganisms();
+
+
+	//Returns the historical Marking of this generation
+	int getHistoricalMarking() { return m_historicalMarking; }
+
 
 	//Random generator 
 	double randomReal(

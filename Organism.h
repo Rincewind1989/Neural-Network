@@ -25,12 +25,16 @@ public:
 
 
 	//Returns the output of the Organism as a vector of doubles
-	vector<double>& getOutputs();
+	vector<double> getOutputs();
 
 
 	//Print this species information about their nodes and connections
-	void Organism::printInfo(
-		int &generationNumber);
+	void printInfo();
+
+
+	//Returns the highest innovation number of this Species
+	int getHighestInnovationNumber();
+
 
 	//Threshold functions
 	//Linear threshold
@@ -69,6 +73,6 @@ private:
 	Genome m_genome;
 
 	//Data of the organism
-	double m_fitness;
+	double m_fitness = 0.0;
 };
 

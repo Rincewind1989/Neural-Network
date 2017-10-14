@@ -2,19 +2,22 @@
 
 //Initial network size
 static int const NUMBER_OF_INDEPENDENT_VARAIABLES = 2 * 5 + 1;	//This is the number of inputnodes
-static int const NUMBER_OF_DEPENDENT_VARIABLES = 1;			//This is the number of output variables which determin the behaviour
-static int const NUMBER_OF_INITIAL_CONNECTIONS = 3;			//Maximum Number of initial connections created by random mutations
+static int const NUMBER_OF_DEPENDENT_VARIABLES = 1;				//This is the number of output variables which determin the behaviour
+static int const NUMBER_OF_INITIAL_CONNECTIONS = 3;				//Maximum Number of initial connections created by random mutations
 
-//Mutation rates and historical marking
-static double const CROSSING_CHANCE = 1.0;						//When mating does a crossing occur? (TODO: Read into NEAT. Think they don´t do any crossing)
+//Breeding and speciation constants
 static double const MUTATION_RATE_CONNECTION = 0.1;				//Chance that a connection mutates when breeding
-static double const MUTATION_RATE_ENABLING = 0.1;				//Chance that a connection en- or disables
+static double const MUTATION_RATE_ENABLING = 0.05;				//Chance that a connection en- or disables
 static double const MUTATION_RATE_ADD_CONNECTION = 0.1;			//Chance that an additional connections mutates when breeding
 static double const MUTATION_RATE_NODE = 0.1;					//Chance that an additional node mutates when breeding
 static double const MUTATION_RATE_TYPE = 0.1;					//Chance that a node will change its type when breeding
+static double const EXCESS_COMPATIBILITY = 1.0;					//Excess par for the compatibility comparison
+static double const DISJOINT_COMPATIBILITY = 1.0;				//Disjoint par for the compatibility comparison
+static double const WEIGHT_COMPATIBILITY = 1.0;					//Weight par for the compatibility comparison
+static double const COMPATIBLITY_THRESHOLD = 3.0;				//Compatibility threshold for a species
 
 //Graphical constants
-static bool WINDOW_MODE_NETWORK = true;						//Shall the neural network be printed to the screen?
+static bool WINDOW_MODE_NETWORK = true;							//Shall the neural network be printed to the screen?
 static bool WINDOW_MODE_GAME = true;							//Shall the game be printed to the screen?
 static bool PRINT_INFO = true;									//Shall the network info be printed?
 static int const WIDTH_NETWORK = 680;							//Window width
