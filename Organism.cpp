@@ -94,11 +94,12 @@ vector<double> Organism::getOutputs()
 
 
 //Print this organisms information about their nodes and connections
-void Organism::printInfo()
+void Organism::printInfo(
+	int organismNumber)
 {
 	//Printing the information to the consolde
 	system("cls");
-	cout << "Organism`s information:\n\n";
+	cout << "Organism " << organismNumber << "'s information:\n\n";
 	cout << "Fitness: " << m_fitness << endl;
 	cout << "Number of nodes: " << m_genome.m_NodeGenes.size() << endl;
 	cout << "Number of input-nodes: " << m_genome.m_inputNodes << endl;

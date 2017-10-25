@@ -29,7 +29,8 @@ public:
 
 
 	//Print this species information about their nodes and connections
-	void printInfo();
+	void printInfo(
+		int organismNumber);
 
 
 	//Returns the highest innovation number of this Species

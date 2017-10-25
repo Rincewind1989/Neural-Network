@@ -1,6 +1,8 @@
 #include "Generation.h"
+#include <iostream>
 
 
+//Creates the starting generation
 Generation::Generation()
 {
 	for (unsigned i = 0; i < SIZE_OF_GENERATION; i++)
@@ -11,7 +13,7 @@ Generation::Generation()
 		genome.m_inputNodes = NUMBER_OF_INDEPENDENT_VARAIABLES;
 		genome.m_outputNodes = NUMBER_OF_DEPENDENT_VARIABLES;
 
-		for (int i = 0; i < genome.m_inputNodes; i++)
+		for (int j = 0; j < genome.m_inputNodes; j++)
 		{
 			NodeGene tmp;
 			tmp.nodeType = 0;
@@ -21,7 +23,7 @@ Generation::Generation()
 		}
 
 		//Creating the output nodes
-		for (int i = 0; i < genome.m_outputNodes; i++)
+		for (int j = 0; j < genome.m_outputNodes; j++)
 		{
 			NodeGene tmp;
 			tmp.nodeType = -1;
@@ -31,29 +33,160 @@ Generation::Generation()
 		}
 
 		//Create the initial connections
-		for (int i = 0; i < NUMBER_OF_INITIAL_CONNECTIONS; i++)
+		for (int j = 0; j < NUMBER_OF_INDEPENDENT_VARAIABLES; j++)
 		{
-			addConnection(genome);
+			addConnection(genome, j, NUMBER_OF_INDEPENDENT_VARAIABLES);
 		}
 
 		//Every initial constructor genome has a chance to mutate a deep layer node
 		mutateNode(genome);
 
 		Organism organism(genome);
-		m_organisms.push_back(organism);	
+		vector<Organism> specie;
+		specie.push_back(organism);
+		m_species.push_back(specie);
 	}
 }
 
 
+//Creates a new generation from the old one
 Generation::Generation(
 	Generation &lastGeneration)
 {
+	//Set old historical Marking to the value of the new one to track new mutated connections
 	m_historicalMarking = lastGeneration.getHistoricalMarking();
+
+	//Create the species that represent the old generation
+	vector<Organism> species = createCompatibilitySpecies(lastGeneration);
+
+	//For now empty place holder are created for the species in the new generation
+	//After creating the whole new generation, empty vectors will be deleted.
+	//(TODO: MAYBE THERE IS A BETTER WAY TO DO THIS)
+	for (int i = 0; i < species.size(); i++)
+	{
+		vector<Organism> tmp;
+		m_species.push_back(tmp);
+	}
+
+	//New Organisms are created inside their species niche
+	//The number every species can create is proportional to their sum of shared Fitnesses in comparison to the sum of all fitnesses from every species
+	cout << "Fitness of this generation: " << lastGeneration.getSumOfFitnessOfAllSpecies() << endl;
+	bool speciesFound = false;
+	for (int i = 0; i < lastGeneration.getSpecies().size(); i++)
+	{
+		cout << "Fitness of this species: " << lastGeneration.getSharedFitnessSpecies(i) << endl;
+		cout << "Fitness share of species " << i << ":" << (int)(lastGeneration.getSharedFitnessSpecies(i) / lastGeneration.getSumOfFitnessOfAllSpecies() * SIZE_OF_GENERATION + 0.5) << endl;
+		for (int j = 0; j < (int)(lastGeneration.getSharedFitnessSpecies(i) / lastGeneration.getSumOfFitnessOfAllSpecies() * SIZE_OF_GENERATION + 0.5); j++)
+		{
+			speciesFound = false;
+			Organism* father = &lastGeneration.getOrganismByIndex(i, 0);
+			Organism* mother = &lastGeneration.getOrganismByIndex(i, 0);
+
+			//Find the Father
+			double chance = randomReal(0.0, lastGeneration.getSharedFitnessSpecies(i));
+			double chanceSum = 0.0;
+			for (int k = 0; k < lastGeneration.getSpeciesByIndex(i).size(); k++)
+			{
+				if ((lastGeneration.getSharedFitness(i, k) + chanceSum) > chance)
+				{
+					father = &lastGeneration.getOrganismByIndex(i, k);
+					break;
+				}
+				chanceSum += lastGeneration.getSharedFitness(i, k);
+
+			}
+
+			//Find the mother
+			chance = randomReal(0.0, lastGeneration.getSharedFitnessSpecies(i));
+			chanceSum = 0.0;
+			for (int k = 0; k < lastGeneration.getSpeciesByIndex(i).size(); k++)
+			{
+				if ((lastGeneration.getSharedFitness(i, k) + chanceSum) > chance)
+				{
+					mother = &lastGeneration.getOrganismByIndex(i, k);
+					break;
+				}
+				chanceSum += lastGeneration.getSharedFitness(i, k);
+			}
+
+			//If mother and father are the same organism, add one of them to a fitting species of the new generation
+			if (mother == father)
+			{
+				int index = 0;
+				for (vector<Organism>::iterator it = species.begin(); it != species.end(); ++it)
+				{
+					if (compatibilityDistance(*it, *mother) <= COMPATIBLITY_THRESHOLD)
+					{
+						m_species[index].push_back(*mother);
+						speciesFound = true;
+						break;
+					}
+					index += 1;
+				}
+				//If now fitting species was found, create a new one
+				if (!speciesFound)
+				{
+					vector<Organism> newSpecies;
+					newSpecies.push_back(*mother);
+					m_species.push_back(newSpecies);
+				}
+			}
+
+			//If they are not the same, breed them together
+			else
+			{
+				Organism child = breedNewOrganism(*father, *mother);
+				int index = 0;
+				for (vector<Organism>::iterator it = species.begin(); it != species.end(); ++it)
+				{
+					if (compatibilityDistance(*it, child) <= COMPATIBLITY_THRESHOLD)
+					{
+						m_species[index].push_back(child);
+						speciesFound = true;
+						break;
+					}
+					index += 1;
+				}
+				//If now fitting species was found, create a new one
+				if (!speciesFound)
+				{
+					vector<Organism> newSpecies;
+					newSpecies.push_back(child);
+					m_species.push_back(newSpecies);
+				}
+			}
+		}
+	}
+
+	//In the end, delete all empty species
+	for (int i = 0; i < m_species.size(); i++)
+	{
+		if (m_species[i].size() == 0)
+		{
+			m_species[i] = m_species[m_species.size() - 1];
+			m_species.pop_back();
+			i--;
+		}
+	}
 }
 
 
 Generation::~Generation()
 {
+}
+
+
+//Creates a vector of organisms that represent the species of the last generation
+vector<Organism> Generation::createCompatibilitySpecies(
+	Generation &lastGeneration)
+{
+	vector<Organism> species;
+	for (vector<vector<Organism>>::iterator it = lastGeneration.getSpecies().begin(); it != lastGeneration.getSpecies().end(); ++it)
+	{
+		int randomOrganism = randomInt(0, it->size() - 1);
+		species.push_back((*it)[randomOrganism]);
+	}
+	return species;
 }
 
 
@@ -195,7 +328,7 @@ Organism Generation::breedNewOrganism(
 	}
 
 	//Creating the hidden nodes
-	for (int i = childGenome.m_inputNodes + childGenome.m_outputNodes; i < highestNodeNumber; i++)
+	for (int i = childGenome.m_inputNodes + childGenome.m_outputNodes; i <= highestNodeNumber; i++)
 	{
 		NodeGene tmp;
 		tmp.nodeType = 1;
@@ -253,7 +386,7 @@ double Generation::compatibilityDistance(
 			}
 		}
 
-		//If not a matching gene was found
+		//If no matching gene was found
 		if (!matchGene)
 		{
 			if (it->historicalNumber <= organism2.getHighestInnovationNumber())
@@ -266,6 +399,7 @@ double Generation::compatibilityDistance(
 			}
 		}
 	}
+
 	//Get highest number of nodes
 	int N = 1;
 	if (organism1.getGenome().m_NodeGenes.size() > organism2.getGenome().m_NodeGenes.size())
@@ -276,91 +410,26 @@ double Generation::compatibilityDistance(
 	{
 		N = organism2.getGenome().m_NodeGenes.size();
 	}
+
 	//Combine everything to the compatibility distance
 	double sum = disjointNumber*DISJOINT_COMPATIBILITY / N + excessNumber*EXCESS_COMPATIBILITY / N + WEIGHT_COMPATIBILITY*weightSum / matchingGenes;
 	return sum;
 }
 
+
 //Adds a connection
-void Generation::addConnection(Genome &genome) {
-	//If yes, take a random node
+void Generation::addConnection(Genome &genome, int connFrom, int connTo) {
+	//Take a random node
 	ConnectionGene tmp;
-	tmp.weight = randomReal(-5.0, 5.0);			//Random weight for the new mutated node
+	tmp.weight = randomReal(-5.0, 5.0);			//Random weight for the new mutated connection
 	tmp.enabled = true;							//New connection should of course be enabled
-	signed randomNode = randomInt(0, genome.m_NodeGenes.size() - 1);
-	while (randomNode > genome.m_inputNodes && randomNode < genome.m_inputNodes + genome.m_outputNodes)
-	{
-		randomNode = randomInt(0, genome.m_NodeGenes.size() - 1);
-	}
-	//Check if this random node isnt already connected to every other node
-	while (true)
-	{
-		//Get the number of other nodes this node can be connected to
-		int numberOfConnectableNodes = genome.m_NodeGenes.size() - 1;
-		//Count the nodes this node is already connected to
-		int numberOfConnectionForNode = 0;
-		for (vector<ConnectionGene>::iterator it = genome.m_ConnectionGenes.begin(); it != genome.m_ConnectionGenes.end(); ++it)
-		{
-			if (it->ConnFromNodeNumber == randomNode)
-			{
-				numberOfConnectionForNode += 1;
-			}
-		}
 
-		//If this node is connected to every other connectable node take a look at the next node or this node is a output node
-		if (numberOfConnectionForNode == numberOfConnectableNodes)
-		{
-			randomNode += 1;
-			while ((randomNode > genome.m_inputNodes && randomNode < genome.m_inputNodes + genome.m_outputNodes))
-			{
-				randomNode += 1;
-			}
-			if (randomNode >= genome.m_NodeGenes.size()) {
-				randomNode = 0;
-			}
-		}
-		//Else ,break the loop if a node was found that is not connected to everybody
-		else
-		{
-			break;
-		}
-		//If non of the above work set the randomNode to -1
-		return;
-	}
+	//Set the start Node to the found node
+	tmp.ConnFromNodeNumber = connFrom;
 
-	//Set the start node to the found node
-	tmp.ConnFromNodeNumber = randomNode;
+	//Set end Node
+	tmp.ConnToNodeNumber = connTo;
 
-	//Now finding the outputNode
-	//Check every other node if it already has a connection to the input node
-	randomNode = randomInt(0, genome.m_NodeGenes.size() - 1);
-	while (randomNode < genome.m_inputNodes)
-	{
-		randomNode = randomInt(0, genome.m_NodeGenes.size() - 1);
-	}
-	bool foundNode = true;
-	while (true)
-	{
-		foundNode = true;
-		for (vector<ConnectionGene>::iterator it = genome.m_ConnectionGenes.begin(); it != genome.m_ConnectionGenes.end(); ++it)
-		{
-			if ((it->ConnFromNodeNumber == tmp.ConnFromNodeNumber && randomNode == it->ConnToNodeNumber))
-			{
-				randomNode += 1;
-				if (randomNode >= genome.m_NodeGenes.size())
-				{
-					randomNode = 0;
-				}
-				foundNode = false;
-				break;
-			}
-		}
-		if (foundNode)
-		{
-			tmp.ConnToNodeNumber = randomNode;
-			break;
-		}
-	}
 	checkHistoricalMarkings(tmp);
 	genome.m_ConnectionGenes.push_back(tmp);
 }
@@ -471,7 +540,14 @@ void Generation::mutateConnection(Genome &genome) {
 	//Does a mutation occur?
 	if (randomReal(0.0, 1.0) <= MUTATION_RATE_CONNECTION) {
 		int randomConnection = randomInt(0, genome.m_ConnectionGenes.size() - 1);
-		genome.m_ConnectionGenes[randomConnection].weight += randomReal(-2.0 * genome.m_ConnectionGenes[randomConnection].weight, 2.0 * genome.m_ConnectionGenes[randomConnection].weight);
+		if (-2.0 * genome.m_ConnectionGenes[randomConnection].weight < 2.0 * genome.m_ConnectionGenes[randomConnection].weight)
+		{
+			genome.m_ConnectionGenes[randomConnection].weight += randomReal(-2.0 * genome.m_ConnectionGenes[randomConnection].weight, 2.0 * genome.m_ConnectionGenes[randomConnection].weight);
+		}
+		else
+		{
+			genome.m_ConnectionGenes[randomConnection].weight += randomReal(2.0 * genome.m_ConnectionGenes[randomConnection].weight, -2.0 * genome.m_ConnectionGenes[randomConnection].weight);
+		}
 	}
 }
 
@@ -518,7 +594,7 @@ void Generation::mutateNode(Genome &genome)
 				conn2.enabled = true;
 				conn1.weight = 1.0;
 				conn2.weight = genome.m_ConnectionGenes[randomConnection + i % genome.m_ConnectionGenes.size()].weight;
-				//Push the new connection into the vector of connections
+				//Push the new connections into the vector of connections
 				checkHistoricalMarkings(conn1);
 				genome.m_ConnectionGenes.push_back(conn1);
 				checkHistoricalMarkings(conn2);
@@ -556,14 +632,17 @@ void Generation::mutateType(Genome &genome)
 void Generation::checkHistoricalMarkings(
 	ConnectionGene &newConnection)
 {
-	for (vector<Organism>::iterator it = m_organisms.begin(); it != m_organisms.end(); ++it)
+	for (vector<vector<Organism>>::iterator itS = m_species.begin(); itS != m_species.end(); ++itS)
 	{
-		for (vector<ConnectionGene>::iterator it2 = it->getGenome().m_ConnectionGenes.begin(); it2 != it->getGenome().m_ConnectionGenes.end(); ++it2)
+		for (vector<Organism>::iterator it = itS->begin(); it != itS->end(); ++it)
 		{
-			if (newConnection.ConnFromNodeNumber == it2->ConnFromNodeNumber && newConnection.ConnToNodeNumber == it2->ConnToNodeNumber)
+			for (vector<ConnectionGene>::iterator it2 = it->getGenome().m_ConnectionGenes.begin(); it2 != it->getGenome().m_ConnectionGenes.end(); ++it2)
 			{
-				newConnection.historicalNumber = it2->historicalNumber;
-				return;
+				if (newConnection.ConnFromNodeNumber == it2->ConnFromNodeNumber && newConnection.ConnToNodeNumber == it2->ConnToNodeNumber)
+				{
+					newConnection.historicalNumber = it2->historicalNumber;
+					return;
+				}
 			}
 		}
 	}
@@ -573,17 +652,60 @@ void Generation::checkHistoricalMarkings(
 
 
 //Gets an organism out of this generation by index
-Organism Generation::getOrganismByIndex(
-	int index)
+Organism &Generation::getOrganismByIndex(
+	int indexSpecies,
+	int indexOrganism)
 {
-	return m_organisms[index];
+	return m_species[indexSpecies][indexOrganism];
 }
 
 
-//Gets an organism out of this generation by index
-vector<Organism> &Generation::getOrganisms()
+//Returns the whole Vector of Species
+vector<vector<Organism>> &Generation::getSpecies()
 {
-	return m_organisms;
+	return m_species;
+}
+
+
+//Returns the shared fitness of an organism with its niche
+double Generation::getSharedFitness(
+	int indexSpecies,
+	int indexOrganism)
+{
+	return m_species[indexSpecies][indexOrganism].getFitness() / m_species[indexSpecies].size();
+}
+
+
+//Returns the sum of the shared fitness of a species
+double Generation::getSharedFitnessSpecies(
+	int indexSpecies)
+{
+	double sum = 0.0;
+	for (vector<Organism>::iterator it = m_species[indexSpecies].begin(); it != m_species[indexSpecies].end(); ++it)
+	{
+		sum += it->getFitness() / m_species[indexSpecies].size();
+	}
+	return sum;
+}
+
+
+//Returns the sum of all shared fitness of all species of this generation
+double Generation::getSumOfFitnessOfAllSpecies()
+{
+	double sum = 0.0;
+	for (int i = 0; i < m_species.size(); i++)
+	{
+		sum += getSharedFitnessSpecies(i);
+	}
+	return sum;
+}
+
+
+//Returns a Species by Index
+vector<Organism> Generation::getSpeciesByIndex(
+	int index)
+{
+	return m_species[index];
 }
 
 

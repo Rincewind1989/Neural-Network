@@ -11,8 +11,18 @@ using namespace std;
 class Generation
 {
 public:
+	//Creates the starting generation
 	Generation();
+
+
+	//Creates a new generation from the old one
 	Generation(Generation &lastGeneration);
+
+
+	//Creates a vector of organisms that represent the species of the last generation
+	vector<Organism> createCompatibilitySpecies(
+		Generation &lastGeneration);
+
 	~Generation();
 
 
@@ -29,7 +39,7 @@ public:
 
 
 	//Add a connection
-	void addConnection(Genome &genome);
+	void addConnection(Genome &genome, int connFrom, int connTo);
 
 
 	//Process all mutationchances
@@ -62,15 +72,37 @@ public:
 
 
 	//Gets an organism out of this generation by index
-	Organism getOrganismByIndex(int index);
+	Organism &getOrganismByIndex(
+		int indexSpecies,
+		int indexOrganism);
 
 
 	//Gets an organism out of this generation by index
-	vector<Organism> &getOrganisms();
+	vector<vector<Organism>> &getSpecies();
 
 
 	//Returns the historical Marking of this generation
 	int getHistoricalMarking() { return m_historicalMarking; }
+
+
+	//Returns the shared fitness of a n organism with its niche
+	double getSharedFitness(
+		int indexSpecies, 
+		int indexOrganism);
+
+
+	//Returns the sum of the shared fitness of a species
+	double getSharedFitnessSpecies(
+		int indexSpecies);
+
+
+	//Returns the sum of all shared fitness of all species of this generation
+	double getSumOfFitnessOfAllSpecies();
+
+
+	//Returns a Species by Index
+	vector<Organism> getSpeciesByIndex(
+		int index);
 
 
 	//Random generator 
@@ -88,7 +120,8 @@ public:
 
 private:
 
-	vector<Organism> m_organisms;
+	vector<vector<Organism>> m_species;
+
 
 	int m_historicalMarking = 0;
 };

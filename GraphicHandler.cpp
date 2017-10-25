@@ -157,6 +157,7 @@ void GraphicHandler::printOrganism(
 	/*Drawing the connections*/
 	//Vector of 2-dimension vertex for the lines
 	vector<vector<sf::Vertex>> lines;
+
 	//Map iterator for the 2 vertex positions of the connetion ends
 	map<int, vector<double>>::iterator Position1;
 	map<int, vector<double>>::iterator Position2;

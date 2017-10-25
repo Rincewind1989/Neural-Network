@@ -45,26 +45,62 @@ int main(int argc, char *argv[])
 	Generation generation;
 	GraphicHandler graphicHandler;
 	Game game;
+	int generationNumber = 0;
+	int organismNumber = 0;
+	int specieNumber = 0;
+	double highestFitness = 0.0;
+	int numberOrganisms = 0;
 
-	generation.getOrganismByIndex(0).printInfo();
+	/*
+	generation.getOrganismByIndex(0, 0).printInfo();
 	int c;
 	cin >> c;
-	generation.getOrganismByIndex(1).printInfo();
+	generation.getOrganismByIndex(1, 0).printInfo();
 
-	Organism testChild = generation.breedNewOrganism(generation.getOrganismByIndex(0), generation.getOrganismByIndex(1));
+	Organism testChild = generation.breedNewOrganism(generation.getOrganismByIndex(0, 0), generation.getOrganismByIndex(1, 0));
 	cin >> c;
 	testChild.printInfo();
-	cin >> c;
+	cin >> c;*/
 
-/*	for (vector<Organism>::iterator it = generation.getOrganisms().begin(); it != generation.getOrganisms().end(); ++it) 
+	while (true)
 	{
-		while (!processGame(game, *it))
+		for (vector<vector<Organism>>::iterator it = generation.getSpecies().begin(); it != generation.getSpecies().end(); ++it)
 		{
-			processGraphicHandler(graphicHandler, *it, game);
-			if (game.printToTerminal()) { it->printInfo(); }
-			processOrganism(*it, game);
+			for (vector<Organism>::iterator it2 = it->begin(); it2 != it->end(); ++it2)
+			{
+				numberOrganisms++;
+			}
 		}
-		game.cleanGame();
-	}*/
+		for (vector<vector<Organism>>::iterator it = generation.getSpecies().begin(); it != generation.getSpecies().end(); ++it)
+		{
+			for (vector<Organism>::iterator it2 = it->begin(); it2 != it->end(); ++it2)
+			{
+				while (!processGame(game, *it2))
+				{
+					processGraphicHandler(graphicHandler, *it2, game);
+					if (game.printToTerminal()) { 					
+						it2->printInfo(organismNumber);
+						cout << "Highest Fitness so far: " << highestFitness << endl;
+						cout << "Number of Species in this generation: " << generation.getSpecies().size() << endl;
+						cout << "Number of Organisms in this generation: " << numberOrganisms << endl;
+					}
+					processOrganism(*it2, game);
+				}
+				game.cleanGame();
+				organismNumber++;
+				if (it2->getFitness() > highestFitness)
+				{
+					highestFitness = it2->getFitness();
+				}
+			}
+			specieNumber++;
+		}
+		Generation newGeneration(generation);
+		generation = newGeneration;
+		generationNumber++;
+		organismNumber = 0;
+		specieNumber = 0;
+		numberOrganisms = 0;
+	}
 	return 0;
 }
